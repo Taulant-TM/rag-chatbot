@@ -3,7 +3,6 @@ __pycache__/
 .env
 venv/
 venv311/
-data/index
 data/old_index
 data/outdated_index
 hf_cache/
