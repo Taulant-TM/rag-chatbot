@@ -1,11 +1,11 @@
 import os
 from typing import Tuple, List
 from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaLLM
+from langchain_openai import ChatOpenAI
 from rag.embeddings import get_embedding_model
 
 VECTOR_PATH = "data/index"
-TOP_K = 4                    
+TOP_K = 8                   
 MAX_CONTEXT_CHARS = 3500
 
 def load_faiss_index(vector_path: str = VECTOR_PATH) -> FAISS:
@@ -17,19 +17,17 @@ def load_faiss_index(vector_path: str = VECTOR_PATH) -> FAISS:
         allow_dangerous_deserialization=True
     )
 
-def get_llm() -> OllamaLLM:
-    return OllamaLLM(
-        model="llama3.2:1b", #tinyllama
-        temperature=0.1,
-        top_p=0.9,
-        base_url="http://127.0.0.1:11434"
+def get_llm():
+    return ChatOpenAI(
+        model="gpt-4o-mini", 
+        temperature=0.0,
     )
 
 
 def safe_qa(
         query: str,
         db: FAISS,
-        llm: OllamaLLM,
+        llm: ChatOpenAI,
         chat_history: List[dict] | None = None
         ) -> Tuple[str, List[str]]:
     
@@ -53,7 +51,7 @@ def safe_qa(
     if not results:
         return "I don't know based on the documents.", []
 
-    MAX_DISTANCE = 0.78
+    MAX_DISTANCE = 0.85
     filtered = [(doc, score) for doc, score in results if score <= MAX_DISTANCE]
 
     if len(filtered) == 0:
@@ -137,7 +135,8 @@ Answer:
 <one concise paragraph>
 """
     
-    answer = llm.invoke(prompt).strip()
+    answer_obj = llm.invoke(prompt)
+    answer = answer_obj.content.strip()
 
     if not answer or not context_chunks:
         return "I don't know based on the documents.", []
@@ -147,10 +146,7 @@ Answer:
             return "I don't know based on the documents.", []
 
     def is_relevant_answer(question: str, answer: str) -> bool:
-        q_words = set(question.lower().split())
-        a_words = set(answer.lower().split())
-
-        return len(q_words & a_words) >= 1 or len(answer.split()) >= 12
+        return len(answer.split()) >= 5
     
     if not is_relevant_answer(query, answer):
         return "I don't know based on the documents.", []
