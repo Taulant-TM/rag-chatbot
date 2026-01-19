@@ -5,8 +5,8 @@ from langchain_openai import ChatOpenAI
 from rag.embeddings import get_embedding_model
 
 VECTOR_PATH = "data/index"
-TOP_K = 8                   
-MAX_CONTEXT_CHARS = 3500
+TOP_K = 11                
+MAX_CONTEXT_CHARS = 5150
 
 def load_faiss_index(vector_path: str = VECTOR_PATH) -> FAISS:
     if not os.path.exists(vector_path):
@@ -51,7 +51,7 @@ def safe_qa(
     if not results:
         return "I don't know based on the documents.", []
 
-    MAX_DISTANCE = 0.85
+    MAX_DISTANCE = 0.92
     filtered = [(doc, score) for doc, score in results if score <= MAX_DISTANCE]
 
     if len(filtered) == 0:
@@ -108,10 +108,11 @@ def safe_qa(
     prompt = f"""
 You are a factual question-answering assistant.
 
-Answer the question using ONLY the information provided.
+If the answer is spread across multiple chunks, combine the relevant information into a single concise answer.
+If the information is in documents then answer.
 Do NOT hallucinate or invent facts.
 If the question asks for names, lists, or examples:
-- Return a comma-separated list
+- Return a comma-separated list for multiple items, but each item on a new line if it helps readability.
 - Do NOT explain
 - Do NOT summarize
 - Use exact terms from the Information
@@ -131,7 +132,6 @@ Question:
 
 Answer format (MANDATORY):
 
-Answer:
 <one concise paragraph>
 """
     

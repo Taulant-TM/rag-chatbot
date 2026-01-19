@@ -36,7 +36,7 @@ def clean_text(text:str) -> str:
 
 def chunk_documents(documents: List[Document]) -> List[Document]:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 700,
+        chunk_size = 800,
         chunk_overlap = 150,
         separators = ["\n\n","\n","."," ",""]
     )
